@@ -30,6 +30,10 @@ header:
     - "runs/**"
     - "tmp/**"
     - "workspace/**"
+    # Sphinx templates and generated pages are not project docs.
+    - "docs/_templates/**"
+    - "docs/_build/**"
+    - "docs/calibration/_generated/**"
     # Retain the upstream license verbatim and the fixtures' Apache-2.0 terms.
     - "examples/cable_calibration/solver/NEWTON-LICENSE.md"
     - "examples/cable_calibration/data/asset.md"
