@@ -3,6 +3,8 @@ include CODING_GUIDELINES.rst REVIEW_GUIDELINES.rst
 include .licenserc.yaml .licenserc-docs.yaml
 include ruff-newton.toml scripts/check_warp_array_syntax.py changelog/README.md .github/PULL_REQUEST_TEMPLATE.md
 graft docs
+prune docs/_build
+prune docs/calibration/_generated
 graft examples
 graft codex-skills
 graft newton_calibration/tests
