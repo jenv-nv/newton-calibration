@@ -34,6 +34,7 @@ class Optimizer(ABC):
         self._pending = None
 
     def initialize(self, parameters):
+        """Store the search dimension and the encoded baseline of ``parameters``."""
         self.dimension = parameters.dimension
         self.initial = parameters.encode(parameters.baseline)
         self._generation = 0
@@ -77,6 +78,7 @@ class Optimizer(ABC):
         return {"generation": self._generation, "exhausted": False}
 
     def state_dict(self):
+        """Return the search state for the run records."""
         return {
             "kind": type(self).__name__,
             "generation": self._generation,
@@ -105,16 +107,19 @@ class GridSearch(Optimizer):
         self.levels = levels
 
     def initialize(self, parameters):
+        """Prepare the grid for the search dimension of ``parameters``."""
         super().initialize(parameters)
         self._iterator = itertools.product(np.linspace(0, 1, self.levels), repeat=self.dimension)
         self._remaining = self.levels**self.dimension
 
     def ask(self, batch_size):
+        """Return the next grid points, at most ``batch_size``."""
         rows = list(itertools.islice(self._iterator, min(batch_size, self._remaining)))
         self._remaining -= len(rows)
         return self._batch(rows)
 
     def diagnostics(self):
+        """Add the number of ``remaining`` grid points. ``exhausted`` is true after the last point."""
         return {
             **super().diagnostics(),
             "exhausted": self._remaining == 0,
@@ -122,6 +127,7 @@ class GridSearch(Optimizer):
         }
 
     def state_dict(self):
+        """Add the ``remaining`` grid points and ``levels`` to the search state."""
         return {**super().state_dict(), "remaining": self._remaining, "levels": self.levels}
 
 
@@ -148,6 +154,7 @@ class CMAES(Optimizer):
         self.sigma = sigma
 
     def initialize(self, parameters):
+        """Create the ``cma`` strategy, started at the encoded baseline."""
         super().initialize(parameters)
         if self.dimension < 2:
             raise ValueError("CMA-ES needs at least two parameters; use GridSearch")
@@ -171,16 +178,19 @@ class CMAES(Optimizer):
         self._last_rows = None
 
     def ask(self, batch_size):
+        """Return one complete generation. ``batch_size`` must equal the population size."""
         if batch_size != self.batch_size:
             raise ValueError("CMA-ES requires a complete generation")
         self._last_rows = self._strategy.ask()
         return self._batch(self._last_rows)
 
     def tell(self, result):
+        """Pass ``result.feedback`` of the pending generation to the ``cma`` strategy."""
         self._accept(result)
         self._strategy.tell(self._last_rows, result.feedback.tolist())
 
     def diagnostics(self):
+        """Add the step size ``sigma`` and the ``condition_number`` of the covariance."""
         return {
             **super().diagnostics(),
             "sigma": float(self._strategy.sigma),
@@ -188,6 +198,7 @@ class CMAES(Optimizer):
         }
 
     def state_dict(self):
+        """Add the mean, step size, covariance, and random state to the search state."""
         return {
             **super().state_dict(),
             "mean": self._strategy.mean.tolist(),
@@ -197,4 +208,5 @@ class CMAES(Optimizer):
         }
 
     def checkpoint(self):
+        """Return the pickled ``cma`` strategy. ``Tuning`` saves it after each batch."""
         return self._strategy.pickle_dumps()

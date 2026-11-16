@@ -86,7 +86,7 @@ class Parameters:
         return self._baseline.copy()
 
     def to_normalized(self, values):
-        """Convert between physical values and per-parameter ``[0,1]`` coordinates."""
+        """Convert physical values to per-parameter ``[0,1]`` coordinates."""
         values = np.array(values, dtype=np.float64)
         if values.shape[-1] != len(self.names):
             raise ValueError("physical parameter width mismatch")
@@ -94,7 +94,7 @@ class Parameters:
         return (values - self._limits[:, 0]) / (self._limits[:, 1] - self._limits[:, 0])
 
     def from_normalized(self, values):
-        """Convert between physical values and per-parameter ``[0,1]`` coordinates."""
+        """Convert per-parameter ``[0,1]`` coordinates to physical values."""
         values = np.asarray(values, dtype=np.float64)
         physical = values * (self._limits[:, 1] - self._limits[:, 0]) + self._limits[:, 0]
         physical[..., self._log] = np.exp(physical[..., self._log])
@@ -126,7 +126,7 @@ class Parameters:
         return self._basis.shape[1]
 
     def snapshot(self):
-        """Record definitions, combination mapping, and identity."""
+        """Record definitions and combination mapping."""
         return {
             "definitions": self.definitions,
             "origin": self._origin.copy(),
@@ -137,15 +137,15 @@ class Parameters:
 
     @property
     def parameter_space_id(self):
-        """Record definitions, combination mapping, and identity."""
+        """Identity of the definitions and combination mapping."""
         return identity(self.snapshot())
 
     def freeze(self):
         self._frozen = True
 
     def encode(self, values):
-        """Convert between physical values and the current combination search space, whose
-        size is ``dimension``."""
+        """Convert physical values to the current combination search space, whose size is
+        ``dimension``."""
         x = self.to_normalized(values) - self._origin
         z = x @ self._basis
         if not np.allclose(z @ self._basis.T, x, atol=1e-7, rtol=1e-7):
@@ -153,8 +153,8 @@ class Parameters:
         return (z - self._low) / (self._high - self._low)
 
     def decode(self, values):
-        """Convert between physical values and the current combination search space, whose
-        size is ``dimension``."""
+        """Convert values in the current combination search space, whose size is
+        ``dimension``, to physical values."""
         values = np.asarray(values, dtype=np.float64)
         if values.shape[-1] != self.dimension:
             raise ValueError("search dimension mismatch")

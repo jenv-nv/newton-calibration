@@ -73,13 +73,14 @@ class Trace:
 class Episode:
     """Each candidate, experiment, and repeat produces an ``Episode``, identified by
     ``(trial_id, experiment_id, repeat)``.
-
-    ``trial_id``, ``experiment_id``, ``repeat``: Candidate, experiment, and repetition identity.
     """
 
     trial_id: str
+    """Candidate identity."""
     experiment_id: str
+    """Experiment identity."""
     repeat: int
+    """Repetition identity."""
     status: str
     """``completed``, or a failure such as ``invalid_parameters``, ``numerical_failure``,
     ``timeout``, or ``execution_error``."""

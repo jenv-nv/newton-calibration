@@ -100,11 +100,11 @@ class Template:
 
     @property
     def template_id(self):
-        """``template_id`` identifies it."""
+        """``template_id`` identifies the configuration."""
         return identity(self.snapshot())
 
     def freeze(self):
-        """``freeze()`` locks it."""
+        """``freeze()`` locks the configuration."""
         self.resolve()
         for key in (
             "numeric_settings",

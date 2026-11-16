@@ -93,9 +93,12 @@ class Asset(ABC):
         self.config = immutable(dict(config or {}))
 
     def load_or_create(self):
+        """Return the asset to calibrate. ``Tuning`` calls it at the start of a run. The
+        default returns this asset."""
         return self
 
     def snapshot(self):
+        """Return the asset type, baseline parameters, and ``config`` as a record."""
         return {
             "type": f"{type(self).__module__}.{type(self).__qualname__}",
             "baseline_parameters": self.baseline_parameters,
@@ -104,6 +107,7 @@ class Asset(ABC):
 
     @property
     def asset_id(self):
+        """Identity of ``snapshot()``."""
         return identity(self.snapshot())
 
     @abstractmethod

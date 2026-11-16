@@ -57,7 +57,7 @@ class Evaluator:
 
     @property
     def evaluation_id(self):
-        """``evaluation_id`` identifies it."""
+        """``evaluation_id`` identifies the scoring protocol in ``metric_spec``."""
         return identity(self.metric_spec)
 
     def score_batch(self, episodes, trial_ids, experiments):

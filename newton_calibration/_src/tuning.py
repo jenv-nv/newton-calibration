@@ -58,10 +58,10 @@ class Tuning:
                 requiring ``0 < step <= 0.25``. Defaults to ``0.03``.
             rank_tolerance: Relative rank threshold with ``0 < tolerance < 1``. The
                 singular-value cutoff is ``max(s_max * tolerance, 1e-10)``. Defaults to ``1e-3``.
-            allow_rank_reduction: Allowing search in retained identifiable combinations of
-                nonzero rank when enabled. Defaults to ``False``.
-            orthogonalize: Building search coordinates from local SVD combinations. Required
-                for rank reduction. Defaults to ``True``.
+            allow_rank_reduction: If enabled, allow search in retained identifiable
+                combinations of nonzero rank. Defaults to ``False``.
+            orthogonalize: If enabled, build search coordinates from local SVD combinations.
+                Required for rank reduction. Defaults to ``True``.
         """
         self.evidence, self.asset, self.evaluator = evidence, asset, evaluator
         self.parameters, self.rollout, self.optimizer = parameters, rollout, optimizer
