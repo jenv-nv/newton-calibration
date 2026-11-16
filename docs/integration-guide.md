@@ -3,11 +3,11 @@ SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Newton Calibration API reference
+# Integration guide
 
 [Quick start](quickstart.md) · [Calibration guide](calibration-guide.md) · [Public exports](../newton_calibration/__init__.py)
 
-These interfaces apply to Newton Calibration 0.2.0. Import core classes from `newton_calibration`. The quick start shows a complete assembly using the public classes and an explicit simulator adapter.
+These interfaces apply to the version shown in the page header. Import core classes from `newton_calibration`. The quick start shows a complete assembly using the public classes and an explicit simulator adapter.
 
 `Tuning` combines ten members named `evidence`, `asset`, `evaluator`, `parameters`, `rollout`, `optimizer`, `decision`, `validator`, `template`, and `play`. It owns `RunState` and returns `TuningResult`. An adapter implements the model construction, parameter binding, and observation readout through `Asset` and `Environment`.
 
