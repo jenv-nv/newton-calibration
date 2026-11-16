@@ -4,7 +4,10 @@
 Newton Calibration
 ==================
 
-Newton Calibration fits the parameters of a Newton simulation to measured evidence.
+Newton Calibration fits simulation parameters to measured data. It gives you
+components such as ``Evidence``, ``Parameters``, ``Asset``, ``Evaluator``,
+``Optimizer`` and ``Validator``. You select, configure and extend them to
+make a calibration workflow for your own system.
 
 .. The calibration pages are in calibration/. The toctree fragment below is the
 .. only connection between this root page and those pages.
