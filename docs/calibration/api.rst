@@ -17,6 +17,7 @@ API Reference
    Decision
    DecisionResult
    Environment
+   Episode
    Evaluator
    Evidence
    Experiment

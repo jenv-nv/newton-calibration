@@ -38,7 +38,7 @@ The CPU suite uses synthetic cases and archived cable evidence. Run new Newton s
 uv run --extra docs -m sphinx -W --keep-going -b html docs docs/_build/html
 ```
 
-The configuration follows Newton's documentation. Put calibration pages in `docs/calibration/` and list them in `docs/calibration/_toctree.rst`.
+The configuration follows Newton's documentation. List every site page in `docs/calibration/_toctree.rst`. The Markdown guides in `docs/` are also read on GitHub: write relative links, and the site build turns links to files outside the site into GitHub links. Design notes in `docs/` are excluded in `docs/conf.py`.
 
 ## PR Instructions
 

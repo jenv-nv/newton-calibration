@@ -9,13 +9,17 @@ The settings follow Newton's ``docs/conf.py``. All calibration pages are in
 
 import datetime
 import os
+import re
 import sys
 import tomllib
+from fnmatch import fnmatch
 from pathlib import Path
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root / "src"))
+docs_root = Path(__file__).resolve().parent
+project_root = docs_root.parent
+sys.path.insert(0, str(project_root))
 
+github_url = "https://github.com/newton-physics/newton-calibration"
 github_version = os.environ.get("GITHUB_REF_NAME") or "main"
 
 # -- Project information ------------------------------------------------------
@@ -38,6 +42,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.mathjax",
     "sphinx_copybutton",
+    "sphinxcontrib.mermaid",
 ]
 
 templates_path = ["_templates"]
@@ -47,14 +52,24 @@ source_suffix = {
     ".md": "markdown",
 }
 
-# The Markdown files in docs/ itself are not part of the site.
-exclude_patterns = ["_build", "*.md", "calibration/_toctree.rst"]
+# The design notes in docs/ are not part of the site.
+exclude_patterns = [
+    "_build",
+    "calibration/_toctree.rst",
+    "generic-calibration-workflow-design.md",
+    "tuning-class-diagram.md",
+    "tuning-skills-implementation.md",
+    "tuning-skills-module-design.md",
+]
+
+# The Markdown pages are also read on GitHub, so accept GitHub's syntax:
+# heading anchors, $...$ math, and ```math and ```mermaid blocks.
+myst_heading_anchors = 4
+myst_enable_extensions = ["dollarmath", "attrs_inline"]
+myst_fence_as_directive = ["math", "mermaid"]
 
 extlinks = {
-    "github": (
-        f"https://github.com/newton-physics/newton-calibration/blob/{github_version}/%s",
-        "%s",
-    ),
+    "github": (f"{github_url}/blob/{github_version}/%s", "%s"),
 }
 
 intersphinx_mapping = {
@@ -113,3 +128,44 @@ html_theme_options = {
 }
 
 html_sidebars = {"**": ["sidebar-nav-bs.html"]}
+
+# -- Markdown links -----------------------------------------------------------
+
+# Relative link targets, such as ../examples/cable_calibration/README.md#setup.
+_relative_link = re.compile(r"\]\((?!https?:|mailto:|#)([^)\s]+)\)")
+# GitHub anchors, such as <a id="ref-r1"></a>.
+_html_anchor = re.compile(r'<a id="([^"]+)"></a>')
+
+
+def _is_site_page(path: Path) -> bool:
+    """Return whether a file is a page of this site."""
+    if path.suffix not in source_suffix or not path.is_relative_to(docs_root):
+        return False
+    name = path.relative_to(docs_root).as_posix()
+    return not any(fnmatch(name, pattern) for pattern in exclude_patterns)
+
+
+def _rewrite_markdown(app, docname: str, source: list[str]) -> None:
+    """Make links and anchors written for GitHub work on the site.
+
+    A link to a repository file that is not a page of the site becomes a link
+    to the file on GitHub. An HTML anchor becomes a MyST anchor.
+    """
+    if not str(app.env.doc2path(docname)).endswith(".md"):
+        return
+    page_dir = (docs_root / docname).parent
+
+    def replace(match: re.Match) -> str:
+        target, _, anchor = match.group(1).partition("#")
+        path = (page_dir / target).resolve()
+        if _is_site_page(path) or not path.is_relative_to(project_root):
+            return match.group(0)
+        kind = "tree" if path.is_dir() else "blob"
+        url = f"{github_url}/{kind}/{github_version}/{path.relative_to(project_root).as_posix()}"
+        return f"]({url}#{anchor})" if anchor else f"]({url})"
+
+    source[0] = _relative_link.sub(replace, _html_anchor.sub(r"[]{#\1}", source[0]))
+
+
+def setup(app):
+    app.connect("source-read", _rewrite_markdown)
