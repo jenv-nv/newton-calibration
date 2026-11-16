@@ -12,6 +12,17 @@ from .data import TrialBatch
 
 
 class Optimizer(ABC):
+    """``Optimizer`` uses an ask/tell protocol. After parameter analysis, ``Tuning`` calls
+    ``initialize(parameters)``. Once the budget allows a batch, it calls ``ask(batch_size)``
+    and returns scores through ``tell(result)``. The optimizer must receive feedback for the
+    pending batch before proposing another.
+
+    To implement another algorithm, subclass ``Optimizer`` and implement ``ask()``. Extend
+    ``initialize()``, ``tell()``, ``diagnostics()``, and ``state_dict()`` as needed, and
+    optionally provide ``checkpoint()`` as CMA-ES does. Shared stopping and budget decisions
+    remain in ``Decision.next_action()``.
+    """
+
     full_batch = False
 
     def __init__(self, batch_size=8, seed=42):
@@ -52,12 +63,17 @@ class Optimizer(ABC):
         self._generation += 1
 
     @abstractmethod
-    def ask(self, batch_size): ...
+    def ask(self, batch_size):
+        """``ask()`` returns ``TrialBatch(trial_ids, search_values)`` with ``[B,Q]`` values in
+        ``[0,1]``, where ``Q`` is search dimension."""
 
     def tell(self, result):
+        """``tell()`` receives the corresponding ``BatchResult``, whose candidate IDs, search
+        values, and ``purpose="train"`` must match."""
         self._accept(result)
 
     def diagnostics(self):
+        """``diagnostics()["exhausted"]`` informs ``Decision`` about search-space exhaustion."""
         return {"generation": self._generation, "exhausted": False}
 
     def state_dict(self):
@@ -70,7 +86,19 @@ class Optimizer(ABC):
 
 
 class GridSearch(Optimizer):
+    """Use ``GridSearch`` to explore a few parameters and inspect responses across their
+    ranges. It generates a grid in the current search coordinates and maps it to physical
+    values with ``Parameters.decode()``."""
+
     def __init__(self, levels=11, batch_size=16):
+        """Initialize the grid search.
+
+        Args:
+            levels: Equally spaced points per search dimension, at least 2, with
+                ``levels ** parameters.dimension`` total points. Defaults to ``11``.
+            batch_size: Requested candidates per batch. Remaining budget and grid points can
+                reduce the last batch. Defaults to ``16``.
+        """
         super().__init__(batch_size)
         if levels < 2:
             raise ValueError("grid needs at least two levels")
@@ -98,9 +126,22 @@ class GridSearch(Optimizer):
 
 
 class CMAES(Optimizer):
+    """``CMAES`` requires the ``cma`` extra and at least two search dimensions. If rank
+    reduction is enabled, choose the optimizer for the reduced ``parameters.dimension``."""
+
     full_batch = True
 
     def __init__(self, batch_size=8, sigma=0.2, seed=42):
+        """Initialize the CMA-ES search.
+
+        Args:
+            batch_size: Population per generation, at least 4. ``full_batch=True`` requires
+                complete-generation evaluation. Defaults to ``8``.
+            sigma: Initial step size in the current normalized search coordinates, with
+                ``0 < sigma < 1``. Defaults to ``0.2``.
+            seed: Sampling seed, default 42, configured separately from experimental
+                simulation seeds.
+        """
         super().__init__(batch_size, seed)
         if batch_size < 4 or not 0 < sigma < 1:
             raise ValueError("CMA-ES needs population >= 4 and 0 < sigma < 1")
