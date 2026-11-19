@@ -61,4 +61,4 @@ python -m examples.cable_driven.run --recordings PATH --run   # calibrate (GPU)
 ```
 
 Each CMA-ES generation has 24 candidates. On one GPU a search runs up to 150 generations
-of about 70 s each, about 3 hours.
+of about 70 s each. The full run, with qualification and validation, takes about 3.5 hours.
