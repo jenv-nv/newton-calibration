@@ -3,7 +3,7 @@ SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# Recipe: calibrate a cable held by a robot
+# Driven cable
 
 This recipe calibrates the rest centerline and the bending stiffness of a free-hanging
 cable, modeled as a VBD rod. A robot gripper holds one end of the cable and moves it.
