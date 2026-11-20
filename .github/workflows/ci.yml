@@ -29,8 +29,14 @@ jobs:
       - name: Repository checks
         run: pre-commit run --all-files
       - name: Core behavior and archived evidence
+        env:
+          # sys.monitoring coverage core: avoids settrace overhead in unmeasured code.
+          # It needs Python 3.12; Python 3.11 uses the C tracer.
+          COVERAGE_CORE: ${{ matrix.python == '3.11' && 'ctrace' || 'sysmon' }}
         run: |
-          python -m newton_calibration.tests
+          python -m coverage run -m newton_calibration.tests
+          python -m coverage report
+          python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
           python -m examples.cable_calibration.verify
       - name: Synthetic calibration demos
         run: |
