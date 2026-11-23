@@ -3,6 +3,8 @@ SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
+[![codecov](https://codecov.io/gh/newton-physics/newton-calibration/graph/badge.svg?token=wqMt9AVMQP)](https://codecov.io/gh/newton-physics/newton-calibration)
+
 # Newton Calibration
 
 Newton Calibration is a toolbox for fitting simulation parameters to measured data. It supplies components, for example `Evidence`, `Parameters`, `Asset`, `Evaluator`, `Optimizer` and `Validator`. You select, configure and extend these components to build a calibration workflow for your own system.
