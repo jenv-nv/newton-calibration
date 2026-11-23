@@ -39,6 +39,12 @@ repos:
       # Run the formatter.
       - id: ruff-format
         exclude: ^examples/cable_calibration/backends/
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.13.5
+    hooks:
+      # Update the uv lockfile
+      - id: uv-lock
   - repo: https://github.com/crate-ci/typos
     rev: v1.51.1
     hooks:
