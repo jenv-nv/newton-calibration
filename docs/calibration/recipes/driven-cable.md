@@ -144,7 +144,7 @@ can use other methods.
 - **Target:** one AprilTag (family 36h11, 0.1 m edge length), attached rigidly to the
   robot flange.
 - **Tag pose:** OpenCV ArUco detection with AprilTag corner refinement in the rectified
-  image, then `solvePnP` with `SOLVEPNP_IPPE_SQUARE`.
+  image, then the OpenCV perspective-n-point solver with `SOLVEPNP_IPPE_SQUARE`.
 - **Robot pose:** the flange pose in the robot base frame at the time stamp of the image.
 - **Samples:** 30 robot poses with the tag in view.
 - **Solver:** OpenCV `calibrateHandEye` with the Park method. For the eye-to-hand case,

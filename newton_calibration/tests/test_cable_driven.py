@@ -35,6 +35,30 @@ def _tcp_rotation(angle):
     return wp.mul(wp.quat_from_axis_angle(wp.vec3(0.0, 1.0, 0.0), float(angle)), down)
 
 
+def _drive_pose(drive, t):
+    """Drive pose at time ``t`` [s] on the host, the reference for the drive kernel.
+
+    Linear in position and slerp in rotation between the samples, held at the end samples.
+    """
+    import warp as wp
+
+    times = drive["times_s"]
+    if t <= times[0]:
+        i, frac = 0, 0.0
+    elif t >= times[-1]:
+        i, frac = len(times) - 1, 0.0
+    else:
+        i = max(j for j in range(len(times) - 1) if times[j] <= t)
+        frac = (t - times[i]) / (times[i + 1] - times[i])
+    p0 = wp.vec3(*drive["positions_m"][i])
+    q0 = wp.quat(*drive["quaternions_xyzw"][i])
+    if frac == 0.0:
+        return p0, q0
+    p1 = wp.vec3(*drive["positions_m"][i + 1])
+    q1 = wp.quat(*drive["quaternions_xyzw"][i + 1])
+    return wp.lerp(p0, p1, frac), wp.quat_slerp(q0, q1, frac)
+
+
 def _write_recording(directory, name, tilt_rad):
     """Write a recording whose TCP tilts by ``tilt_rad`` over 0.4 s at a fixed grasp point.
 
@@ -44,7 +68,6 @@ def _write_recording(directory, name, tilt_rad):
     from PIL import Image, ImageDraw
 
     from examples.cable_driven.chamfer import Camera  # noqa: PLC0415
-    from examples.driven_attachment import drive_pose  # noqa: PLC0415
 
     times = np.linspace(0.0, 0.4, 9)
     drive = {
@@ -56,7 +79,7 @@ def _write_recording(directory, name, tilt_rad):
     (directory / "masks").mkdir(parents=True)
     masks = []
     for k, t in enumerate(OBSERVATION_TIMES):
-        position, rotation = drive_pose(drive, t)
+        position, rotation = _drive_pose(drive, t)
         axis = np.array(wp.quat_rotate(rotation, wp.vec3(0.0, 0.0, 1.0)))
         cable = np.array(position) + np.linspace(0.0, 0.48, 2)[:, None] * axis
         image = Image.new("L", (200, 200), 0)
@@ -92,7 +115,7 @@ def _short_case(tmp_path):
     config_path.write_text(json.dumps(config), encoding="utf-8")
     tuning = build_tuning(config_path, recordings_root=root, workspace=tmp_path / "ws")
     tuning.template.freeze()
-    return config, tuning
+    return tuning
 
 
 class TestCableDriven(TempPathTestCase):
@@ -108,7 +131,7 @@ class TestCableDriven(TempPathTestCase):
 
     def test_batched_members_equal_single_members(self):
         """Three candidates in one model give the same traces as three single-member runs."""
-        _, tuning = _short_case(self.tmp_path)
+        tuning = _short_case(self.tmp_path)
         experiments = list(tuning.evidence.train_data)
         baseline = tuning.parameters.as_dict(tuning.parameters.baseline)
         trials = [(f"t{i}", {**baseline, "bending_rigidity": ei}) for i, ei in enumerate((0.1, 0.5, 2.0))]
@@ -138,9 +161,7 @@ class TestCableDriven(TempPathTestCase):
         """After a run, the clamp capsule sits at the last TCP pose composed with the attachment."""
         import warp as wp
 
-        from examples.driven_attachment import drive_pose  # noqa: PLC0415
-
-        _, tuning = _short_case(self.tmp_path)
+        tuning = _short_case(self.tmp_path)
         experiment = tuning.evidence.train_data[0]
         settings = tuning.template.experiment_settings[experiment.id]
         parameters = tuning.parameters.as_dict(tuning.parameters.baseline)
@@ -150,7 +171,7 @@ class TestCableDriven(TempPathTestCase):
             pose = environment.state_0.body_q.numpy()[environment.driven_bodies.numpy()[0]]
         finally:
             environment.close()
-        position, rotation = drive_pose(settings["drive"], float(experiment.times[-1]))
+        position, rotation = _drive_pose(settings["drive"], float(experiment.times[-1]))
         expected = np.array(position) + np.array(wp.quat_rotate(rotation, environment.local_position))
         np.testing.assert_allclose(pose[:3], expected, atol=1e-6)
         expected_rotation = np.array(wp.mul(rotation, environment.local_rotation))

@@ -145,11 +145,10 @@ class CableDrivenBatchEnvironment(DrivenBatchEnvironment):
 
     def __init__(self, template, parameter_values, settings, config):
         self.iterations = int(template.numeric_settings["iterations"])
-        self.length = float(config["cable_length_m"])
         attachment = settings["attachment"]
         clamp_position = float(attachment["clamp_position_m"])
         self.n, self.h, self.clamp_segment, self.first_node_arc = cable_layout(
-            self.length, template.discretization, clamp_position
+            float(config["cable_length_m"]), template.discretization, clamp_position
         )
         # Nodes beyond the kinematic capsule when it sits inside the gripper: the visible cable.
         self.visible_from = 1 if template.discretization.get("clamp", "segment") == "stub" else 0
@@ -231,7 +230,6 @@ class CableDrivenBatchEnvironment(DrivenBatchEnvironment):
             builder.body_inertia[body] = wp.mat33(np.zeros((3, 3)) if kinematic else inertia)
             builder.body_inv_inertia[body] = wp.mat33(np.zeros((3, 3)) if kinematic else np.linalg.inv(inertia))
         return {
-            "parameters": dict(parameters),
             "bodies": np.asarray(bodies, dtype=int),
             "joints": np.asarray(joints, dtype=int),
             "shape": shape_start,

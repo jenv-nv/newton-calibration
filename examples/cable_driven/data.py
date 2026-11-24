@@ -76,7 +76,8 @@ def experiment(recording, *, scale):
     ).normalized()
 
 
-def _sha256(path):
+def file_sha256(path):
+    """Return the SHA-256 of a file's content, as hex."""
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
@@ -96,7 +97,7 @@ def experiment_settings(recording, *, seed):
     observation = {
         "camera": dict(recording.data["camera"]),
         "masks": masks,
-        "masks_sha256": [_sha256(path) for path in masks],
+        "masks_sha256": [file_sha256(path) for path in masks],
     }
     return {
         "fps": settings["fps"],

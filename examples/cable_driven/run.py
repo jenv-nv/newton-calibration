@@ -7,7 +7,6 @@ Construction does not simulate. CLI execution requires --run.
 """
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -15,7 +14,6 @@ from newton_calibration import (
     CMAES,
     Decision,
     Evidence,
-    GridSearch,
     Parameter,
     Parameters,
     Play,
@@ -26,7 +24,7 @@ from newton_calibration import (
 )
 
 from .backend import CableDrivenAsset, cable_layout, rest_levers, rest_parameter_names
-from .data import CASE, experiment, experiment_settings, load_recordings
+from .data import CASE, experiment, experiment_settings, file_sha256, load_recordings
 from .evaluator import CableDrivenEvaluator
 
 CONFIG = CASE / "configs" / "orange_cable.json"
@@ -58,20 +56,6 @@ def _rest_shape(config, recordings):
     return parameters, {}
 
 
-def _sha256(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def _optimizer(config):
-    settings = dict(config)
-    kind = settings.pop("kind")
-    if kind == "cmaes":
-        return CMAES(**settings)
-    if kind == "grid":
-        return GridSearch(**settings)
-    raise ValueError(f"unknown optimizer kind {kind!r}; expected 'cmaes' or 'grid'")
-
-
 def build_tuning(config_path=CONFIG, *, recordings_root, workspace="workspace/cable_driven"):
     """Return a fresh Tuning for the driven cable case. Nothing is simulated."""
     config_path = Path(config_path)
@@ -96,8 +80,8 @@ def build_tuning(config_path=CONFIG, *, recordings_root, workspace="workspace/ca
         precision_tolerance=config["precision_tolerance"],
     )
     sources = {
-        "config_sha256": _sha256(config_path),
-        "recording_sha256": {k: _sha256(recordings[k].directory / "recording.json") for k in used},
+        "config_sha256": file_sha256(config_path),
+        "recording_sha256": {k: file_sha256(recordings[k].directory / "recording.json") for k in used},
     }
     return Tuning(
         evidence=Evidence(
@@ -110,7 +94,7 @@ def build_tuning(config_path=CONFIG, *, recordings_root, workspace="workspace/ca
         parameters=parameters,
         template=template,
         rollout=Rollout(worlds=config["worlds"], parameter_rtol=READBACK_RTOL, parameter_atol=READBACK_ATOL),
-        optimizer=_optimizer(config["optimizer"]),
+        optimizer=CMAES(**config["optimizer"]),
         decision=Decision(**config["decision"]),
         validator=Validator(**config["validator"]),
         play=Play(),
@@ -119,7 +103,7 @@ def build_tuning(config_path=CONFIG, *, recordings_root, workspace="workspace/ca
         # directions puts nearly all of the rotated box outside the parameter bounds with
         # 19 parameters, so almost every candidate would be rejected.
         orthogonalize=False,
-        **({"rank_tolerance": config["rank_tolerance"]} if "rank_tolerance" in config else {}),
+        rank_tolerance=config["rank_tolerance"],
     )
 
 

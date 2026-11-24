@@ -34,6 +34,8 @@ from newton_calibration import BatchEnvironment, Environment, SimulationError, T
 
 # Window [frames] over which the settle drift is measured.
 SETTLE_CHECK_FRAMES = 2
+# Gravity [m/s^2] in the drive frame, +Z up.
+GRAVITY = (0.0, 0.0, -9.81)
 
 
 def check_drive(drive):
@@ -43,25 +45,6 @@ def check_drive(drive):
         raise ValueError("drive times, positions and quaternions must have the same length >= 2")
     if any(b <= a for a, b in itertools.pairwise(drive["times_s"])):
         raise ValueError("drive times must be strictly increasing")
-
-
-def drive_pose(drive, t):
-    """Host-side drive pose at time ``t`` [s]: the same interpolation as :func:`_drive_kernel`."""
-    times = drive["times_s"]
-    if t <= times[0]:
-        i, frac = 0, 0.0
-    elif t >= times[-1]:
-        i, frac = len(times) - 1, 0.0
-    else:
-        i = max(j for j in range(len(times) - 1) if times[j] <= t)
-        frac = (t - times[i]) / (times[i + 1] - times[i])
-    p0 = wp.vec3(*drive["positions_m"][i])
-    q0 = wp.quat(*drive["quaternions_xyzw"][i])
-    if frac == 0.0:
-        return p0, q0
-    p1 = wp.vec3(*drive["positions_m"][i + 1])
-    q1 = wp.quat(*drive["quaternions_xyzw"][i + 1])
-    return wp.lerp(p0, p1, frac), wp.quat_slerp(q0, q1, frac)
 
 
 @wp.kernel
@@ -155,7 +138,7 @@ class DrivenBatchEnvironment(BatchEnvironment):
       observation ``index``.
     """
 
-    def __init__(self, template, parameter_values, settings, *, gravity=(0.0, 0.0, -9.81)):
+    def __init__(self, template, parameter_values, settings):
         numeric = template.numeric_settings
         self.device = wp.get_device(numeric["device"])
         self.substeps = int(numeric["substeps"])
@@ -168,10 +151,12 @@ class DrivenBatchEnvironment(BatchEnvironment):
         self.dt = self.frame_dt / self.substeps
         self.drive = settings["drive"]
         check_drive(self.drive)
-        drive_position, drive_rotation = drive_pose(self.drive, self.drive["times_s"][0])
+        # The members are built at the first drive sample, where the settle holds the drive.
+        drive_position = wp.vec3(*self.drive["positions_m"][0])
+        drive_rotation = wp.quat(*self.drive["quaternions_xyzw"][0])
 
         with wp.ScopedDevice(self.device):
-            builder = newton.ModelBuilder(gravity=gravity)
+            builder = newton.ModelBuilder(gravity=GRAVITY)
             self.members = [
                 self._add_member(builder, parameters, drive_position, drive_rotation) for parameters in parameter_values
             ]

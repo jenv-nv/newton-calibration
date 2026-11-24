@@ -10,7 +10,7 @@
     "Units: rigidities are per length (EI, EA, GA, GJ), dampings per length; the backend divides by the segment length.",
     "Bend damping, stretch, shear and twist are not fitted and stay fixed.",
     "rank_tolerance: alternating rest bends near the free end change the silhouette little; their singular values are about 6e-4 of the largest. 1e-4 keeps them in the search.",
-    "The ratio of stretch to bending rigidity stays below 1e4 over the EI bounds: VBD rods are not reliable above it.",
+    "Stretch and shear rigidity are stiff enough that the cable does not stretch significantly.",
     "fps: the simulation frame rate. Each observation is taken at the solver step nearest to its camera time stamp.",
     "settle_frames: the cable is within 1 mm of rest after at most about 40 frames over the EI bounds; 120 frames (2 s) leave a margin."
   ],
@@ -44,7 +44,7 @@
   "validation": ["validation", "validation2"],
   "evaluator": {"loss": "squared_error"},
   "worlds": 24,
-  "optimizer": {"kind": "cmaes", "batch_size": 24, "sigma": 0.1, "seed": 42},
+  "optimizer": {"batch_size": 24, "sigma": 0.1, "seed": 42},
   "decision": {
     "max_trials": 7200,
     "max_rollouts": 16000,
