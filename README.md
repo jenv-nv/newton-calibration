@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: Copyright (c) 2026 The Newton Developers
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
+[![Docs (main)](https://img.shields.io/badge/docs-main-blue)](https://newton-physics.github.io/newton-calibration/)
 [![codecov](https://codecov.io/gh/newton-physics/newton-calibration/graph/badge.svg?token=wqMt9AVMQP)](https://codecov.io/gh/newton-physics/newton-calibration)
 
 # Newton Calibration
