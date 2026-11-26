@@ -20,12 +20,20 @@ env:
 jobs:
   cpu:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         python: ["3.11", "3.12"]
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43  # v2.22.3
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python }}
@@ -76,6 +84,7 @@ jobs:
   codecov-upload:
     name: Upload coverage to Codecov
     needs: cpu
+    timeout-minutes: 10
     # Codecov only tracks main: pull request runs skip the upload.
     # Mirrors UPLOAD_TO_CODECOV, which a job-level condition cannot read.
     if: >-
